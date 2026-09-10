@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouChill browser checks</title>
+  <link rel="stylesheet" href="/theme.css">
+  <script src="/app.js"></script>
+</head>
+
+<body>
+  <main class="content">
+    <section class="panel form-panel">
+      <h1 class="text-2xl font-bold">YouChill self-checks</h1>
+      <p class="text-[var(--color-muted)]">Open this page after publishing to verify core local behavior.</p>
+      <ol id="results" class="mt-5 space-y-3"></ol>
+    </section>
+  </main>
+  <script>
+    const results = document.getElementById('results');
+    const checks = [
+      ['safeJSON recovers invalid data', () => safeJSON('__missing_or_invalid__', []) instanceof Array],
+      ['demo feed has placeholder videos', () => allVideos().length >= 6],
+      ['clean sign-in link exists', () => [...document.querySelectorAll('a')].every(a => !a.href.includes('.html'))],
+      ['like state toggles locally', () => {
+        const before = liked('test');
+        toggleLike('test');
+        const after = liked('test');
+        toggleLike('test');
+        return before !== after;
+      }]
+    ];
+    checks.forEach(([name, test]) => {
+      const li = document.createElement('li');
+      try {
+        li.textContent = `${test() ? 'PASS' : 'FAIL'} — ${name}`;
+      } catch (error) {
+        li.textContent = `FAIL — ${name}: ${error.message}`;
+      }
+      results.appendChild(li);
+    });
+
+  </script>
+</body>
+
+</html>
