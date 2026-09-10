@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouChill — Watch and share</title>
+  <link rel="stylesheet" href="/theme.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/app.js"></script>
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="app-header"><a class="logo" href="/">You<span>Chill</span></a>
+      <form id="searchForm" class="searchbar" role="search"><input id="searchInput" type="search" placeholder="Search videos, creators, or tags" aria-label="Search videos"><button type="submit" aria-label="Search">⌕</button></form>
+      <div class="header-actions"><a class="btn btn-primary" href="/upload">＋ Upload</a><a data-signin href="/signin">Sign in</a><a data-account class="hidden" href="/account"></a></div>
+    </header>
+    <div class="page-layout">
+      <aside class="sidebar"><a class="active" href="/">⌂ Home</a><a href="/channels">▣ Channels</a><a href="/chat">☵ Community</a><a href="/upload">＋ Create</a></aside>
+      <main class="content">
+        <div id="chips" class="chip-row"></div>
+        <section>
+          <h1 class="mb-5 text-2xl font-bold">Recommended videos</h1>
+          <div id="videoGrid" class="video-grid"></div>
+          <p id="empty" class="empty hidden">No videos match your search.</p>
+          <p id="feedStatus" class="notice"></p>
+        </section>
+      </main>
+    </div>
+    <footer class="footer">YouChill is a local demo video community · <a href="/channels">Explore channels</a> · <a href="/chat">Join the conversation</a></footer>
+  </div>
+  <script>
+    const grid = document.getElementById('videoGrid');
+    const empty = document.getElementById('empty');
+    const status = document.getElementById('feedStatus');
+    let activeCategory = 'All';
+    let renderId = 0;
+    const categories = ['All', 'Trending', 'Music', 'Gaming', 'Learning', 'Live'];
+
+    function renderChips() {
+      const holder = document.getElementById('chips');
+      categories.forEach(category => {
+        const button = document.createElement('button');
+        button.className = `chip ${category === activeCategory ? 'active' : ''}`;
+        button.textContent = category;
+        button.onclick = () => {
+          activeCategory = category;
+          renderChips();
+          render(document.getElementById('searchInput').value.trim().toLowerCase());
+        };
+        holder.appendChild(button);
+      });
+    }
+    async function render(term = '') {
+      const current = ++renderId;
+      status.textContent = 'Loading videos…';
+      const files = await getFileMap();
+      if (current !== renderId) return;
+      const matches = allVideos().filter(v => (!term || `${v.title} ${v.creator || v.uploadedBy} ${v.tags || ''}`.toLowerCase().includes(term)) && (activeCategory === 'All' || v.category === activeCategory || (activeCategory === 'Trending' && v.views)));
+      grid.replaceChildren(...matches.map(v => videoCard(v, files)));
+      empty.classList.toggle('hidden', matches.length > 0);
+      status.textContent = '';
+    }
+    document.getElementById('searchForm').onsubmit = e => {
+      e.preventDefault();
+      render(document.getElementById('searchInput').value.trim().toLowerCase());
+    };
+    document.getElementById('searchInput').oninput = e => render(e.target.value.trim().toLowerCase());
+    renderChips();
+    render();
+
+  </script>
+</body>
+
+</html>
