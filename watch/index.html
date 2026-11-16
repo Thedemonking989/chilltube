@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Watch — YouChill</title>
+  <link rel="stylesheet" href="/themes.css">
+  <script src="/app.js"></script>
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="app-header"><a class="logo" href="/">You<span>Chill</span></a>
+      <form class="searchbar" role="search" action="/" method="get"><input name="q" type="search" placeholder="Search videos, creators, or tags" aria-label="Search videos"><button type="submit" aria-label="Search">⌕</button></form>
+      <div class="header-actions"><a class="btn btn-primary" href="/upload">＋ Upload</a><a data-signin href="/signin">Sign in</a><a data-account class="hidden" href="/account"></a></div>
+    </header>
+    <div class="page-layout">
+      <aside class="sidebar"><a href="/">⌂ Home</a><a href="/channels">▣ Channels</a><a href="/chat">☵ Community</a><a href="/upload">＋ Create</a></aside>
+      <main class="content">
+        <div id="watchRoot">
+          <p class="notice">Loading video…</p>
+        </div>
+      </main>
+    </div>
+    <footer class="footer">YouChill is a small video community · <a href="/channels">Explore channels</a> · <a href="/chat">Join the conversation</a></footer>
+  </div>
+
+  <script>
+    const videoId = new URLSearchParams(location.search).get('id');
+    const root = document.getElementById('watchRoot');
+
+    function showError(message) {
+      const box = document.createElement('div');
+      box.className = 'panel error-box';
+      const heading = document.createElement('h1');
+      heading.textContent = 'Video unavailable';
+      const text = document.createElement('p');
+      text.textContent = message;
+      const back = document.createElement('a');
+      back.href = '/';
+      back.textContent = '← Back to the feed';
+      box.append(heading, text, back);
+      root.replaceChildren(box);
+    }
+
+    function buildMeta(video) {
+      const views = Number(video.views) || 0;
+      const likes = Number(video.likes) || 0;
+      const meta = document.createElement('div');
+      meta.className = 'watch-meta';
+      meta.textContent = `${video.creator} · ${formatCount(views)} view${views === 1 ? '' : 's'} · ${timeAgo(video.createdAt)} · ${formatCount(likes)} like${likes === 1 ? '' : 's'}`;
+      return meta;
+    }
+
+    function commentNode(comment) {
+      const item = document.createElement('div');
+      item.className = 'comment';
+      const head = document.createElement('div');
+      head.className = 'comment-head';
+      const author = document.createElement('span');
+      author.className = 'comment-author';
+      author.textContent = comment.username;
+      const time = document.createElement('span');
+      time.className = 'comment-time';
+      time.textContent = timeAgo(comment.createdAt);
+      head.append(author, time);
+      const text = document.createElement('p');
+      text.className = 'comment-text';
+      text.textContent = comment.text;
+      item.append(head, text);
+      return item;
+    }
+
+    function buildComments(video, user) {
+      const section = document.createElement('section');
+      section.className = 'comments';
+      const heading = document.createElement('h2');
+      heading.className = 'comments-title';
+      heading.textContent = 'Comments';
+
+      const form = document.createElement('form');
+      form.className = 'comment-form';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.id = 'commentInput';
+      input.maxLength = 1000;
+      input.placeholder = user ? 'Add a comment…' : 'Sign in to comment';
+      input.disabled = !user;
+      const button = document.createElement('button');
+      button.type = 'submit';
+      button.className = 'btn btn-primary';
+      button.textContent = 'Post';
+      button.disabled = !user;
+      form.append(input, button);
+
+      const note = document.createElement('p');
+      note.className = 'notice';
+      note.id = 'commentStatus';
+      if (!user) {
+        const link = document.createElement('a');
+        link.href = signInUrl();
+        link.textContent = 'Sign in';
+        note.append(link, document.createTextNode(' to join the conversation.'));
+      }
+
+      const list = document.createElement('div');
+      list.id = 'commentList';
+
+      async function loadComments() {
+        try {
+          const data = await Api.get(`/api/videos/${encodeURIComponent(video.id)}/comments`);
+          if (!data.comments.length) {
+            const blank = document.createElement('p');
+            blank.className = 'empty';
+            blank.textContent = 'No comments yet — be the first.';
+            list.replaceChildren(blank);
+            return;
+          }
+          list.replaceChildren(...data.comments.map(commentNode));
+        } catch (error) {
+          note.textContent = error.message;
+        }
+      }
+
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+        button.disabled = true;
+        try {
+          await Api.post(`/api/videos/${encodeURIComponent(video.id)}/comments`, { text });
+          input.value = '';
+          await loadComments();
+          note.textContent = 'Comment posted.';
+        } catch (error) {
+          note.textContent = error.message;
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      section.append(heading, form, note, list);
+      loadComments();
+      return section;
+    }
+
+    function renderVideo(video, user) {
+      const player = document.createElement('div');
+      player.className = 'watch-player';
+      const element = document.createElement('video');
+      element.controls = true;
+      element.playsInline = true;
+      element.preload = 'metadata';
+      element.src = video.streamUrl;
+      element.setAttribute('aria-label', video.title);
+      player.appendChild(element);
+
+      const title = document.createElement('h1');
+      title.className = 'watch-title';
+      title.textContent = video.title;
+
+      const meta = buildMeta(video);
+
+      const actions = document.createElement('div');
+      actions.className = 'watch-actions';
+      const like = document.createElement('button');
+      like.type = 'button';
+      like.className = `btn btn-ghost ${video.liked ? 'liked' : ''}`;
+      like.textContent = video.liked ? '♥ Liked' : '♡ Like';
+      like.addEventListener('click', () => toggleLike(video, like));
+      const channel = document.createElement('a');
+      channel.className = 'btn btn-ghost';
+      channel.href = `/channels?creator=${encodeURIComponent(video.creator)}`;
+      channel.textContent = `▣ ${video.creator}`;
+      actions.append(like, channel);
+
+      const description = document.createElement('p');
+      description.className = 'watch-description';
+      description.textContent = video.description || 'No description.';
+
+      const tags = document.createElement('div');
+      tags.className = 'tag-row';
+      if (video.category) {
+        const category = document.createElement('span');
+        category.className = 'badge';
+        category.textContent = video.category;
+        tags.appendChild(category);
+      }
+      String(video.tags || '')
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(Boolean)
+        .forEach(tag => {
+          const chip = document.createElement('a');
+          chip.className = 'badge';
+          chip.href = `/?q=${encodeURIComponent(tag)}`;
+          chip.textContent = `#${tag}`;
+          tags.appendChild(chip);
+        });
+
+      root.replaceChildren(player, title, meta, actions, description, tags, buildComments(video, user));
+
+      Api.post(`/api/videos/${encodeURIComponent(video.id)}/view`)
+        .then(data => {
+          video.views = data.views;
+          const updated = buildMeta(video);
+          meta.replaceWith(updated);
+        })
+        .catch(() => {});
+    }
+
+    function renderDemo(video) {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'watch-player demo-thumb';
+      placeholder.style.setProperty('--thumb-a', video.colorA || 'var(--color-primary)');
+      placeholder.style.setProperty('--thumb-b', video.colorB || 'var(--color-link)');
+      placeholder.textContent = video.icon || '▶';
+
+      const title = document.createElement('h1');
+      title.className = 'watch-title';
+      title.textContent = video.title;
+
+      const meta = buildMeta(Object.assign({ likes: 0 }, video));
+
+      const note = document.createElement('p');
+      note.className = 'panel notice-card';
+      note.append(document.createTextNode('This is a sample card from the demo feed — it has no video file. '));
+      const upload = document.createElement('a');
+      upload.href = '/upload';
+      upload.textContent = 'Upload your own video';
+      note.append(upload, document.createTextNode(' to watch, like and comment.'));
+
+      root.replaceChildren(placeholder, title, meta, note);
+    }
+
+    async function boot() {
+      if (!videoId) return showError('No video was selected.');
+      const user = await getMe();
+      try {
+        const data = await Api.get(`/api/videos/${encodeURIComponent(videoId)}`);
+        renderVideo(data.video, user);
+      } catch (error) {
+        const demo = DEMO_VIDEOS.find(video => video.id === videoId);
+        if (demo) renderDemo(demo);
+        else showError(error.message || 'That video could not be found.');
+      }
+    }
+
+    boot();
+  </script>
+</body>
+
+</html>

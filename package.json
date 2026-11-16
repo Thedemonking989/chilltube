@@ -1,0 +1,14 @@
+{
+  "name": "youchill",
+  "version": "1.0.0",
+  "private": true,
+  "description": "YouChill — a small video community: upload, watch, comment and chat.",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

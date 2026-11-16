@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload — YouChill</title>
+  <link rel="stylesheet" href="/themes.css">
+  <script src="/app.js"></script>
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="app-header"><a class="logo" href="/">You<span>Chill</span></a>
+      <form class="searchbar" role="search" action="/" method="get"><input name="q" type="search" placeholder="Search videos, creators, or tags" aria-label="Search videos"><button type="submit" aria-label="Search">⌕</button></form>
+      <div class="header-actions"><a class="btn btn-primary" href="/upload">＋ Upload</a><a data-signin href="/signin">Sign in</a><a data-account class="hidden" href="/account"></a></div>
+    </header>
+    <div class="page-layout">
+      <aside class="sidebar"><a href="/">⌂ Home</a><a href="/channels">▣ Channels</a><a href="/chat">☵ Community</a><a class="active" href="/upload">＋ Create</a></aside>
+      <main class="content">
+        <form id="uploadForm" class="panel form-panel" autocomplete="off">
+          <h1 class="page-title">Upload a video</h1>
+          <p id="gate" class="notice hidden"></p>
+          <div class="field">
+            <label for="file">Video file</label>
+            <input id="file" type="file" accept="video/mp4,video/webm,video/ogg">
+            <p class="field-hint">MP4, WebM or Ogg — up to 300 MB.</p>
+          </div>
+          <div class="field"><label for="title">Title</label><input id="title" maxlength="120"></div>
+          <div class="field"><label for="description">Description</label><textarea id="description" rows="4" maxlength="2000"></textarea></div>
+          <div class="field"><label for="tags">Tags</label><input id="tags" maxlength="200" placeholder="travel, city, walk"></div>
+          <div class="field"><label for="category">Category</label>
+            <select id="category">
+              <option>Trending</option>
+              <option>Music</option>
+              <option>Gaming</option>
+              <option>Learning</option>
+              <option>Live</option>
+              <option>Comedy</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="submitBtn" type="submit">Upload video</button>
+          <div id="progressWrap" class="progress hidden"><div id="progressBar" class="progress-bar"></div></div>
+          <p id="status" class="notice"></p>
+        </form>
+      </main>
+    </div>
+    <footer class="footer">YouChill is a small video community · <a href="/channels">Explore channels</a> · <a href="/chat">Join the conversation</a></footer>
+  </div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const status = document.getElementById('status');
+    const submitBtn = document.getElementById('submitBtn');
+    const progressWrap = document.getElementById('progressWrap');
+    const progressBar = document.getElementById('progressBar');
+
+    async function boot() {
+      const user = await getMe();
+      if (user) {
+        status.textContent = `Uploading as ${user.username}.`;
+        return;
+      }
+      const gate = document.getElementById('gate');
+      gate.classList.remove('hidden');
+      gate.append('You need an account to upload. ');
+      const link = document.createElement('a');
+      link.href = signInUrl();
+      link.textContent = 'Sign in or create one';
+      gate.append(link, document.createTextNode('.'));
+      form.querySelectorAll('input, textarea, select, button').forEach(element => {
+        element.disabled = true;
+      });
+    }
+
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+
+      const file = document.getElementById('file').files[0];
+      const title = document.getElementById('title').value.trim();
+
+      if (!file) {
+        status.textContent = 'Choose a video file first.';
+        return;
+      }
+      if (!title) {
+        status.textContent = 'Give your video a title.';
+        return;
+      }
+
+      const request = new XMLHttpRequest();
+      request.open('POST', '/api/videos');
+      request.setRequestHeader('Content-Type', file.type || 'video/mp4');
+      request.setRequestHeader('X-Title', encodeURIComponent(title));
+      request.setRequestHeader('X-Description', encodeURIComponent(document.getElementById('description').value.trim()));
+      request.setRequestHeader('X-Tags', encodeURIComponent(document.getElementById('tags').value.trim()));
+      request.setRequestHeader('X-Category', encodeURIComponent(document.getElementById('category').value));
+      request.setRequestHeader('X-Filename', encodeURIComponent(file.name));
+
+      progressWrap.classList.remove('hidden');
+      progressBar.style.width = '0%';
+      submitBtn.disabled = true;
+      status.textContent = 'Uploading…';
+
+      request.upload.addEventListener('progress', event => {
+        if (event.lengthComputable) {
+          progressBar.style.width = `${Math.round((event.loaded / event.total) * 100)}%`;
+        }
+      });
+
+      request.addEventListener('load', () => {
+        submitBtn.disabled = false;
+        let data = {};
+        try {
+          data = JSON.parse(request.responseText);
+        } catch {
+          /* handled below */
+        }
+        if (request.status === 201 && data.video) {
+          status.textContent = 'Uploaded — opening your video…';
+          location.assign(watchUrl(data.video.id));
+          return;
+        }
+        progressWrap.classList.add('hidden');
+        status.textContent = data.error || 'Upload failed, please try again.';
+      });
+
+      request.addEventListener('error', () => {
+        submitBtn.disabled = false;
+        progressWrap.classList.add('hidden');
+        status.textContent = 'Upload failed — check your connection and try again.';
+      });
+
+      request.send(file);
+    });
+
+    boot();
+  </script>
+</body>
+
+</html>

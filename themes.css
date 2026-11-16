@@ -360,6 +360,356 @@ select {
   font-size: 12px;
 }
 
+.hidden {
+  display: none !important;
+}
+
+.page-title {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.field-hint {
+  margin: 6px 0 0;
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-nav-bg);
+  color: var(--color-muted);
+  font-size: 10px;
+}
+
+a.badge:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.thumb-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.thumb-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: rgba(0, 0, 0, 0.65);
+  border-color: transparent;
+  color: #ffffff;
+}
+
+.video-card h3 a {
+  color: var(--color-text);
+}
+
+.video-card h3 a:hover {
+  color: var(--color-link-hover);
+}
+
+/* --- watch page --- */
+
+.watch-player {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #000000;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  max-width: 960px;
+}
+
+.watch-player video {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.watch-player.demo-thumb {
+  font-size: 56px;
+}
+
+.watch-title {
+  margin: 12px 0 4px;
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.watch-meta {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.watch-actions {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.btn.liked {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.watch-description {
+  margin: 0 0 8px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  max-width: 960px;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.notice-card {
+  padding: 18px;
+  color: var(--color-muted);
+  line-height: 1.6;
+}
+
+.error-box {
+  padding: 28px;
+  color: var(--color-muted);
+  line-height: 1.7;
+}
+
+.error-box h1 {
+  margin-top: 0;
+  color: var(--color-text);
+  font-size: 18px;
+}
+
+/* --- comments --- */
+
+.comments {
+  max-width: 960px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 14px;
+}
+
+.comments-title {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+
+.comment-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.comment-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 9px;
+  color: var(--color-text);
+  background: var(--color-input);
+  border: 1px solid #c6c6c6;
+  border-radius: var(--radius);
+}
+
+.comment {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.comment-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.comment-author {
+  font-weight: 700;
+}
+
+.comment-time {
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.comment-text {
+  margin: 4px 0 0;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+/* --- community chat --- */
+
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  max-width: 880px;
+  height: calc(100vh - 190px);
+  min-height: 340px;
+  margin: 0 auto;
+}
+
+.chat-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.chat-head .page-title {
+  margin: 0;
+  font-size: 16px;
+}
+
+.chat-status {
+  margin: 3px 0 0;
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 14px;
+}
+
+.chat-message {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px;
+  padding: 4px 0;
+  line-height: 1.5;
+}
+
+.chat-author {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.chat-author.mine {
+  color: var(--color-primary);
+}
+
+.chat-text {
+  overflow-wrap: anywhere;
+}
+
+.chat-time {
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.chat-form {
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--color-border);
+}
+
+.chat-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 9px;
+  color: var(--color-text);
+  background: var(--color-input);
+  border: 1px solid #c6c6c6;
+  border-radius: var(--radius);
+}
+
+.chat-panel .notice {
+  margin: 0;
+  padding: 0 14px 12px;
+}
+
+/* --- upload progress --- */
+
+.progress {
+  height: 10px;
+  margin-top: 12px;
+  background: var(--color-nav-bg);
+  border: 1px solid var(--color-border);
+}
+
+.progress-bar {
+  width: 0;
+  height: 100%;
+  background: var(--color-primary);
+  transition: width 0.15s linear;
+}
+
+/* --- auth tabs --- */
+
+.tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tab {
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  background: var(--color-surface);
+  color: var(--color-muted);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.tab.active {
+  border-color: var(--color-border);
+  background: var(--color-nav-bg);
+  color: var(--color-primary);
+}
+
+/* --- channels --- */
+
+.channel-card {
+  display: block;
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  color: var(--color-text);
+}
+
+.channel-card:hover {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.channel-name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* --- self-checks --- */
+
+.check-list {
+  padding-left: 18px;
+  line-height: 2;
+}
+
+.check-list li {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 800px) {
+  .chat-panel {
+    height: calc(100vh - 250px);
+  }
+}
+
 @media (max-width: 800px) {
   .app-header {
     padding: 7px 10px;

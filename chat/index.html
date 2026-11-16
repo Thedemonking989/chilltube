@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community chat — YouChill</title>
+  <link rel="stylesheet" href="/themes.css">
+  <script src="/app.js"></script>
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="app-header"><a class="logo" href="/">You<span>Chill</span></a>
+      <form class="searchbar" role="search" action="/" method="get"><input name="q" type="search" placeholder="Search videos, creators, or tags" aria-label="Search videos"><button type="submit" aria-label="Search">⌕</button></form>
+      <div class="header-actions"><a class="btn btn-primary" href="/upload">＋ Upload</a><a data-signin href="/signin">Sign in</a><a data-account class="hidden" href="/account"></a></div>
+    </header>
+    <div class="page-layout">
+      <aside class="sidebar"><a href="/">⌂ Home</a><a href="/channels">▣ Channels</a><a class="active" href="/chat">☵ Community</a><a href="/upload">＋ Create</a></aside>
+      <main class="content">
+        <div class="panel chat-panel">
+          <div class="chat-head">
+            <div>
+              <h1 class="page-title">Community chat</h1>
+              <p id="chatStatus" class="chat-status">Connecting…</p>
+            </div>
+            <span class="badge">Everyone on YouChill</span>
+          </div>
+          <div id="chatMessages" class="chat-messages">
+            <p class="empty">No messages yet — say hello.</p>
+          </div>
+          <form id="chatForm" class="chat-form">
+            <input id="chatInput" maxlength="500" autocomplete="off" placeholder="Say something…" aria-label="Chat message">
+            <button class="btn btn-primary" type="submit">Send</button>
+          </form>
+          <p id="chatNotice" class="notice"></p>
+        </div>
+      </main>
+    </div>
+    <footer class="footer">YouChill is a small video community · <a href="/channels">Explore channels</a> · <a href="/chat">Join the conversation</a></footer>
+  </div>
+
+  <script>
+    const messagesEl = document.getElementById('chatMessages');
+    const formEl = document.getElementById('chatForm');
+    const inputEl = document.getElementById('chatInput');
+    const statusEl = document.getElementById('chatStatus');
+    const noticeEl = document.getElementById('chatNotice');
+
+    let lastSeq = 0;
+    let me = null;
+
+    function messageNode(message) {
+      const row = document.createElement('div');
+      row.className = 'chat-message';
+      const author = document.createElement('span');
+      author.className = `chat-author${me && message.userId === me.id ? ' mine' : ''}`;
+      author.textContent = message.username;
+      const text = document.createElement('span');
+      text.className = 'chat-text';
+      text.textContent = message.text;
+      const time = document.createElement('span');
+      time.className = 'chat-time';
+      time.textContent = timeAgo(message.createdAt);
+      row.append(author, document.createTextNode(': '), text, time);
+      return row;
+    }
+
+    function appendMessages(messages) {
+      if (!messages.length) return;
+      const placeholder = messagesEl.querySelector('.empty');
+      if (placeholder) placeholder.remove();
+      const nearBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 80;
+      const fragment = document.createDocumentFragment();
+      messages.forEach(message => {
+        if (message.seq <= lastSeq) return;
+        lastSeq = Math.max(lastSeq, message.seq);
+        fragment.appendChild(messageNode(message));
+      });
+      messagesEl.appendChild(fragment);
+      if (nearBottom) messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    async function poll() {
+      try {
+        const data = await Api.get(`/api/chat${lastSeq ? `?since=${lastSeq}` : ''}`);
+        appendMessages(data.messages);
+        statusEl.textContent = 'Live · checks for new messages every 2 seconds';
+      } catch {
+        statusEl.textContent = 'Reconnecting…';
+      }
+    }
+
+    formEl.addEventListener('submit', async event => {
+      event.preventDefault();
+      const text = inputEl.value.trim();
+      if (!text) return;
+      if (!me) {
+        location.assign(signInUrl());
+        return;
+      }
+      inputEl.disabled = true;
+      try {
+        await Api.post('/api/chat', { text });
+        inputEl.value = '';
+        noticeEl.textContent = '';
+        await poll();
+      } catch (error) {
+        noticeEl.textContent = error.message;
+      } finally {
+        inputEl.disabled = false;
+        inputEl.focus();
+      }
+    });
+
+    (async function boot() {
+      me = await getMe();
+      if (!me) {
+        inputEl.disabled = true;
+        inputEl.placeholder = 'Sign in to chat';
+        noticeEl.append('Only signed-in members can post. ');
+        const link = document.createElement('a');
+        link.href = signInUrl();
+        link.textContent = 'Sign in or create an account';
+        noticeEl.append(link, document.createTextNode('.'));
+      }
+      await poll();
+      setInterval(poll, 2000);
+    })();
+  </script>
+</body>
+
+</html>
