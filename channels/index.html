@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Channels — YouChill</title>
+  <link rel="stylesheet" href="/themes.css">
+  <script src="/app.js"></script>
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="app-header"><a class="logo" href="/">You<span>Chill</span></a>
+      <form class="searchbar" role="search" action="/" method="get"><input name="q" type="search" placeholder="Search videos, creators, or tags" aria-label="Search videos"><button type="submit" aria-label="Search">⌕</button></form>
+      <div class="header-actions"><a class="btn btn-primary" href="/upload">＋ Upload</a><a data-signin href="/signin">Sign in</a><a data-account class="hidden" href="/account"></a></div>
+    </header>
+    <div class="page-layout">
+      <aside class="sidebar"><a href="/">⌂ Home</a><a class="active" href="/channels">▣ Channels</a><a href="/chat">☵ Community</a><a href="/upload">＋ Create</a></aside>
+      <main class="content">
+        <h1 class="page-title" id="channelsTitle">Channels</h1>
+        <p id="channelsStatus" class="notice"></p>
+        <div id="creatorList"></div>
+        <div id="videoGrid" class="video-grid"></div>
+      </main>
+    </div>
+    <footer class="footer">YouChill is a small video community · <a href="/channels">Explore channels</a> · <a href="/chat">Join the conversation</a></footer>
+  </div>
+
+  <script>
+    const creatorList = document.getElementById('creatorList');
+    const videoGrid = document.getElementById('videoGrid');
+    const statusEl = document.getElementById('channelsStatus');
+    const titleEl = document.getElementById('channelsTitle');
+    const creator = new URLSearchParams(location.search).get('creator');
+
+    async function showCreator(name) {
+      titleEl.textContent = `Videos from ${name}`;
+      const videos = await allVideos();
+      const own = videos.filter(video => video.creator === name);
+      if (!own.length) {
+        statusEl.textContent = 'This channel has no videos yet.';
+        return;
+      }
+      videoGrid.replaceChildren(...own.map(videoCard));
+      const back = document.createElement('a');
+      back.href = '/channels';
+      back.textContent = '← All channels';
+      statusEl.replaceChildren(back);
+    }
+
+    async function showChannels() {
+      const data = await Api.get('/api/channels');
+      if (!data.channels.length) {
+        statusEl.append('No channels yet — ');
+        const link = document.createElement('a');
+        link.href = '/upload';
+        link.textContent = 'upload the first video';
+        statusEl.append(link, document.createTextNode('.'));
+        return;
+      }
+      statusEl.textContent = `${data.channels.length} creator${data.channels.length === 1 ? '' : 's'}`;
+      creatorList.replaceChildren(...data.channels.map(channel => {
+        const card = document.createElement('a');
+        card.className = 'panel channel-card';
+        card.href = `/channels?creator=${encodeURIComponent(channel.creator)}`;
+        const name = document.createElement('div');
+        name.className = 'channel-name';
+        name.textContent = channel.creator;
+        const meta = document.createElement('div');
+        meta.className = 'video-meta';
+        meta.textContent = `${channel.videos} video${channel.videos === 1 ? '' : 's'} · ${formatCount(channel.views)} views`;
+        card.append(name, meta);
+        return card;
+      }));
+    }
+
+    (async function boot() {
+      try {
+        if (creator) await showCreator(creator);
+        else await showChannels();
+      } catch (error) {
+        statusEl.textContent = error.message;
+      }
+    })();
+  </script>
+</body>
+
+</html>
